@@ -1,0 +1,6 @@
+{
+  "name": "Masoor Billing",
+  "description": "Mobile-first Marathi Hotel Billing App with offline billing, PDF receipts, customer ledger, sales dashboard, and cloud backup.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

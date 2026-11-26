@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Masoor Billing</string>
+    <string name="default_shop_name">हॉटेल आखा मसूर पॅलेस</string>
+    <string name="default_shop_subtitle">शुद्ध व चविष्ट अस्सल मराठी चव</string>
+    <string name="nav_billing">बिलिंग</string>
+    <string name="nav_dashboard">डॅशबोर्ड</string>
+    <string name="nav_customers">ग्राहक</string>
+    <string name="nav_history">इतिहास</string>
+    <string name="nav_settings">सेटिंग्ज</string>
+</resources>

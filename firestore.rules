@@ -1,0 +1,218 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: deny all reads/writes by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidShopSettings(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId.size() <= 128 &&
+             data.shopName is string && data.shopName.size() >= 1 && data.shopName.size() <= 80 &&
+             (!('shopSubtitle' in data) || (data.shopSubtitle is string && data.shopSubtitle.size() <= 120)) &&
+             (!('shopPhone' in data) || (data.shopPhone is string && data.shopPhone.size() <= 20)) &&
+             (!('shopAddress' in data) || (data.shopAddress is string && data.shopAddress.size() <= 160)) &&
+             data.fullMasoorPrice is int && data.fullMasoorPrice >= 1 && data.fullMasoorPrice <= 100000 &&
+             data.halfMasoorPrice is int && data.halfMasoorPrice >= 1 && data.halfMasoorPrice <= 100000 &&
+             data.rotiPrice is int && data.rotiPrice >= 1 && data.rotiPrice <= 100000 &&
+             data.nextBillNumber is int && data.nextBillNumber >= 1 && data.nextBillNumber <= 100000000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCustomer(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId.size() <= 128 &&
+             data.localId is int && data.localId >= 1 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             data.mobile is string && data.mobile.size() <= 15 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidBill(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId.size() <= 128 &&
+             data.billNumber is string && data.billNumber.size() >= 1 && data.billNumber.size() <= 32 &&
+             data.customerName is string && data.customerName.size() >= 1 && data.customerName.size() <= 80 &&
+             data.customerMobile is string && data.customerMobile.size() <= 15 &&
+             data.billTimestampMillis is int && data.billTimestampMillis > 0 &&
+             data.fullMasoorQty is int && data.fullMasoorQty >= 0 && data.fullMasoorQty <= 10000 &&
+             data.fullMasoorPrice is int && data.fullMasoorPrice >= 1 && data.fullMasoorPrice <= 100000 &&
+             data.halfMasoorQty is int && data.halfMasoorQty >= 0 && data.halfMasoorQty <= 10000 &&
+             data.halfMasoorPrice is int && data.halfMasoorPrice >= 1 && data.halfMasoorPrice <= 100000 &&
+             data.rotiQty is int && data.rotiQty >= 0 && data.rotiQty <= 10000 &&
+             data.rotiPrice is int && data.rotiPrice >= 1 && data.rotiPrice <= 100000 &&
+             data.grandTotal is int && data.grandTotal > 0 &&
+             data.cashPaid is int && data.cashPaid >= 0 &&
+             data.onlinePaid is int && data.onlinePaid >= 0 &&
+             data.onlineConfirmed is bool &&
+             data.totalReceived is int && data.totalReceived >= 0 && data.totalReceived <= data.grandTotal &&
+             data.pendingAmount is int && data.pendingAmount >= 0 && data.pendingAmount <= data.grandTotal &&
+             data.totalReceived + data.pendingAmount == data.grandTotal &&
+             data.shopNameSnapshot is string && data.shopNameSnapshot.size() >= 1 && data.shopNameSnapshot.size() <= 80 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/settings/{settingId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(settingId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(settingId) &&
+                       incoming().keys().hasAll(['userId', 'shopName', 'fullMasoorPrice', 'halfMasoorPrice', 'rotiPrice', 'nextBillNumber', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'shopName', 'shopSubtitle', 'shopPhone', 'shopAddress', 'fullMasoorPrice', 'halfMasoorPrice', 'rotiPrice', 'nextBillNumber', 'createdAt', 'updatedAt']) &&
+                       isValidShopSettings(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(settingId) &&
+                       isValidShopSettings(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['shopName', 'shopSubtitle', 'shopPhone', 'shopAddress', 'fullMasoorPrice', 'halfMasoorPrice', 'rotiPrice', 'nextBillNumber', 'updatedAt']);
+    }
+
+    match /users/{userId}/customers/{customerId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(customerId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(customerId) &&
+                       incoming().keys().hasAll(['userId', 'localId', 'name', 'mobile', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'localId', 'name', 'mobile', 'createdAt', 'updatedAt']) &&
+                       isValidCustomer(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(customerId) &&
+                       isValidCustomer(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['localId', 'name', 'mobile', 'updatedAt']);
+    }
+
+    function isValidRegisterRecord(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId.size() <= 128 &&
+             data.recordUuid is string && data.recordUuid.size() >= 1 && data.recordUuid.size() <= 64 &&
+             data.registerDate is string && data.registerDate.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
+             data.registerDateMillis is int && data.registerDateMillis > 0 &&
+             data.fullMasoorQty is int && data.fullMasoorQty >= 0 && data.fullMasoorQty <= 100000 &&
+             data.fullMasoorRate is int && data.fullMasoorRate == 100 &&
+             data.fullMasoorIncome is int && data.fullMasoorIncome == data.fullMasoorQty * data.fullMasoorRate &&
+             data.halfMasoorQty is int && data.halfMasoorQty >= 0 && data.halfMasoorQty <= 100000 &&
+             data.halfMasoorRate is int && data.halfMasoorRate == 50 &&
+             data.halfMasoorIncome is int && data.halfMasoorIncome == data.halfMasoorQty * data.halfMasoorRate &&
+             data.rotiQty is int && data.rotiQty >= 0 && data.rotiQty <= 100000 &&
+             data.rotiRate is int && data.rotiRate == 15 &&
+             data.rotiIncome is int && data.rotiIncome == data.rotiQty * data.rotiRate &&
+             data.totalQuantity is int && data.totalQuantity == data.fullMasoorQty + data.halfMasoorQty + data.rotiQty &&
+             data.totalIncome is int && data.totalIncome == data.fullMasoorIncome + data.halfMasoorIncome + data.rotiIncome &&
+             data.rawTranscript is string && data.rawTranscript.size() <= 4000 &&
+             data.unclearSummary is string && data.unclearSummary.size() <= 500 &&
+             data.notes is string && data.notes.size() <= 500 &&
+             data.wasAiRead is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/bills/{billId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(billId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(billId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'billNumber', 'customerName', 'customerMobile',
+                         'billTimestampMillis', 'fullMasoorQty', 'fullMasoorPrice',
+                         'halfMasoorQty', 'halfMasoorPrice', 'rotiQty', 'rotiPrice',
+                         'grandTotal', 'cashPaid', 'onlinePaid', 'onlineConfirmed',
+                         'totalReceived', 'pendingAmount', 'shopNameSnapshot',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'billNumber', 'customerName', 'customerMobile',
+                         'billTimestampMillis', 'fullMasoorQty', 'fullMasoorPrice',
+                         'halfMasoorQty', 'halfMasoorPrice', 'rotiQty', 'rotiPrice',
+                         'grandTotal', 'cashPaid', 'onlinePaid', 'onlineConfirmed',
+                         'totalReceived', 'pendingAmount', 'shopNameSnapshot',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidBill(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(billId) &&
+                       isValidBill(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().billNumber == existing().billNumber &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'customerName', 'customerMobile', 'billTimestampMillis',
+                         'fullMasoorQty', 'fullMasoorPrice', 'halfMasoorQty', 'halfMasoorPrice',
+                         'rotiQty', 'rotiPrice', 'grandTotal', 'cashPaid', 'onlinePaid',
+                         'onlineConfirmed', 'totalReceived', 'pendingAmount',
+                         'shopNameSnapshot', 'updatedAt'
+                       ]);
+    }
+
+    match /users/{userId}/register_records/{recordId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(recordId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(recordId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'recordUuid', 'registerDate', 'registerDateMillis',
+                         'fullMasoorQty', 'fullMasoorRate', 'fullMasoorIncome',
+                         'halfMasoorQty', 'halfMasoorRate', 'halfMasoorIncome',
+                         'rotiQty', 'rotiRate', 'rotiIncome',
+                         'totalQuantity', 'totalIncome', 'rawTranscript',
+                         'unclearSummary', 'notes', 'wasAiRead',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'recordUuid', 'registerDate', 'registerDateMillis',
+                         'fullMasoorQty', 'fullMasoorRate', 'fullMasoorIncome',
+                         'halfMasoorQty', 'halfMasoorRate', 'halfMasoorIncome',
+                         'rotiQty', 'rotiRate', 'rotiIncome',
+                         'totalQuantity', 'totalIncome', 'rawTranscript',
+                         'unclearSummary', 'notes', 'wasAiRead',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidRegisterRecord(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(recordId) &&
+                       isValidRegisterRecord(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().recordUuid == existing().recordUuid &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'registerDate', 'registerDateMillis',
+                         'fullMasoorQty', 'fullMasoorRate', 'fullMasoorIncome',
+                         'halfMasoorQty', 'halfMasoorRate', 'halfMasoorIncome',
+                         'rotiQty', 'rotiRate', 'rotiIncome',
+                         'totalQuantity', 'totalIncome', 'rawTranscript',
+                         'unclearSummary', 'notes', 'wasAiRead', 'updatedAt'
+                       ]);
+    }
+  }
+}

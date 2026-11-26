@@ -1,0 +1,164 @@
+{
+  "entities": {
+    "ShopSettings": {
+      "title": "ShopSettings",
+      "description": "Shop profile, editable product prices, and sequential bill counter for cloud backup.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "shopName": { "type": "string", "description": "Hotel/Shop display name." },
+        "shopSubtitle": { "type": "string", "description": "Optional tagline printed on receipts." },
+        "shopPhone": { "type": "string", "description": "Optional shop contact number." },
+        "shopAddress": { "type": "string", "description": "Optional shop address." },
+        "fullMasoorPrice": { "type": "integer", "description": "Unit price for Full Akha Masoor in INR." },
+        "halfMasoorPrice": { "type": "integer", "description": "Unit price for Half Pakka Masoor in INR." },
+        "rotiPrice": { "type": "integer", "description": "Unit price for Roti in INR." },
+        "nextBillNumber": { "type": "integer", "description": "Next sequential bill number counter." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation (FieldValue.serverTimestamp())." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on last update (FieldValue.serverTimestamp())." }
+      },
+      "required": [
+        "userId",
+        "shopName",
+        "fullMasoorPrice",
+        "halfMasoorPrice",
+        "rotiPrice",
+        "nextBillNumber",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Saved customer profile backed up from local Room database.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "localId": { "type": "integer", "description": "Local Room primary key ID." },
+        "name": { "type": "string", "description": "Customer full name." },
+        "mobile": { "type": "string", "description": "Customer 10-digit mobile number or empty." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["userId", "localId", "name", "mobile", "createdAt", "updatedAt"]
+    },
+    "Bill": {
+      "title": "Bill",
+      "description": "Permanent hotel bill record backed up from local Room database.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "billNumber": { "type": "string", "description": "Unique human-readable bill number (e.g., MB-0001)." },
+        "customerName": { "type": "string", "description": "Customer name on the bill." },
+        "customerMobile": { "type": "string", "description": "Customer mobile number on the bill." },
+        "billTimestampMillis": { "type": "integer", "description": "Original bill creation epoch milliseconds." },
+        "fullMasoorQty": { "type": "integer", "description": "Quantity of Full Akha Masoor." },
+        "fullMasoorPrice": { "type": "integer", "description": "Unit price snapshot for Full Akha Masoor." },
+        "halfMasoorQty": { "type": "integer", "description": "Quantity of Half Pakka Masoor." },
+        "halfMasoorPrice": { "type": "integer", "description": "Unit price snapshot for Half Pakka Masoor." },
+        "rotiQty": { "type": "integer", "description": "Quantity of Roti." },
+        "rotiPrice": { "type": "integer", "description": "Unit price snapshot for Roti." },
+        "grandTotal": { "type": "integer", "description": "Calculated grand total in INR." },
+        "cashPaid": { "type": "integer", "description": "Cash amount received in INR." },
+        "onlinePaid": { "type": "integer", "description": "Confirmed online amount received in INR." },
+        "onlineConfirmed": { "type": "boolean", "description": "Whether online payment was manually confirmed." },
+        "totalReceived": { "type": "integer", "description": "Total confirmed received amount (cashPaid + confirmed onlinePaid)." },
+        "pendingAmount": { "type": "integer", "description": "Remaining balance (grandTotal - totalReceived)." },
+        "shopNameSnapshot": { "type": "string", "description": "Shop name snapshot at bill creation time." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": [
+        "userId",
+        "billNumber",
+        "customerName",
+        "customerMobile",
+        "billTimestampMillis",
+        "fullMasoorQty",
+        "fullMasoorPrice",
+        "halfMasoorQty",
+        "halfMasoorPrice",
+        "rotiQty",
+        "rotiPrice",
+        "grandTotal",
+        "cashPaid",
+        "onlinePaid",
+        "onlineConfirmed",
+        "totalReceived",
+        "pendingAmount",
+        "shopNameSnapshot",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DailyRegisterRecord": {
+      "title": "DailyRegisterRecord",
+      "description": "Digitized daily notebook register entry backed up from Room database.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "recordUuid": { "type": "string", "description": "Unique stable UUID for deduplicating restores." },
+        "registerDate": { "type": "string", "description": "Register date in YYYY-MM-DD format." },
+        "registerDateMillis": { "type": "integer", "description": "Register date epoch milliseconds." },
+        "fullMasoorQty": { "type": "integer", "description": "Full Akha Masoor plates sold." },
+        "fullMasoorRate": { "type": "integer", "description": "Fixed rate per plate (100 INR)." },
+        "fullMasoorIncome": { "type": "integer", "description": "fullMasoorQty * fullMasoorRate." },
+        "halfMasoorQty": { "type": "integer", "description": "Half Pakka Masoor plates sold." },
+        "halfMasoorRate": { "type": "integer", "description": "Fixed rate per plate (50 INR)." },
+        "halfMasoorIncome": { "type": "integer", "description": "halfMasoorQty * halfMasoorRate." },
+        "rotiQty": { "type": "integer", "description": "Roti pieces sold." },
+        "rotiRate": { "type": "integer", "description": "Fixed rate per piece (15 INR)." },
+        "rotiIncome": { "type": "integer", "description": "rotiQty * rotiRate." },
+        "totalQuantity": { "type": "integer", "description": "Sum of all item quantities." },
+        "totalIncome": { "type": "integer", "description": "Total daily income in INR." },
+        "rawTranscript": { "type": "string", "description": "Raw OCR transcript from notebook photo." },
+        "unclearSummary": { "type": "string", "description": "Notes on unclear numbers or manual edits." },
+        "notes": { "type": "string", "description": "Optional user notes." },
+        "wasAiRead": { "type": "boolean", "description": "True if extracted via Gemini OCR." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": [
+        "userId",
+        "recordUuid",
+        "registerDate",
+        "registerDateMillis",
+        "fullMasoorQty",
+        "fullMasoorRate",
+        "fullMasoorIncome",
+        "halfMasoorQty",
+        "halfMasoorRate",
+        "halfMasoorIncome",
+        "rotiQty",
+        "rotiRate",
+        "rotiIncome",
+        "totalQuantity",
+        "totalIncome",
+        "rawTranscript",
+        "unclearSummary",
+        "notes",
+        "wasAiRead",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/ShopSettings" },
+      "description": "Per-user shop configuration and product prices backup."
+    },
+    "/users/{userId}/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Per-user saved customer records backup."
+    },
+    "/users/{userId}/bills/{billId}": {
+      "schema": { "$ref": "#/entities/Bill" },
+      "description": "Per-user permanent bill history backup."
+    },
+    "/users/{userId}/register_records/{recordId}": {
+      "schema": { "$ref": "#/entities/DailyRegisterRecord" },
+      "description": "Per-user digitized daily register entries backup."
+    }
+  }
+}

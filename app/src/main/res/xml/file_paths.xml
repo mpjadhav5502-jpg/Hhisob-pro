@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path
+        name="bills"
+        path="bills/" />
+    <cache-path
+        name="camera_captures"
+        path="camera_captures/" />
+    <cache-path
+        name="register_backups"
+        path="register_backups/" />
+    <files-path
+        name="register_photos"
+        path="register_photos/" />
+</paths>
